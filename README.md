@@ -171,15 +171,10 @@ Contributions and issues are welcome! Please fork and submit pull requests.
 
 ---
 
-## License
-
-MIT License — see the [LICENSE](LICENSE) file.
-
----
-
 ## Contact
-
-For questions or support, open an issue or contact the maintainer.
+For questions or collaboration, please contact:
+Carlos Montefusco – cmontefusco@gmail.com
+Project Link: [https://github.com/camontefusco/adc-conjugation-evaluation](https://github.com/camontefusco/SQL_Tableau_mRNA_BioPharma_DB)
 
 ---
 
