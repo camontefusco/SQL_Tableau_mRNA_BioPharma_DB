@@ -52,6 +52,110 @@ The project supports decision making for various stakeholders by providing inter
 
 ---
 
+## ⚙️ SQL Analytics Highlights
+
+This project uses **structured SQL patterns** with:
+- **Parameterized stored procedures** for reusable analysis
+- **Stored views** to precompute aggregations
+- **User-defined functions** for event rates and coverage
+
+### ✅ Sample Queries
+
+```sql
+-- Total contracted revenue by country
+SELECT country_name, SUM(total_doses * price_per_dose) AS total_revenue
+FROM Contracts
+JOIN Countries USING (country_id)
+GROUP BY country_name;
+
+-- Dose delivery completion rate
+SELECT contract_id, 
+       ROUND(SUM(doses_shipped)/total_doses * 100, 2) AS delivery_rate
+FROM Contracts
+JOIN Shipments USING (contract_id)
+GROUP BY contract_id;
+```
+📈 Stored Views
+```sql
+
+-- Coverage % by country
+CREATE VIEW CountryCoveragePercent AS
+SELECT c.country_name, 
+       ROUND(COUNT(vx.vaccination_id) / p.population_total * 100, 2) AS coverage_percent
+FROM vaccinations vx
+JOIN populations p ON vx.country_id = p.country_id
+JOIN countries c ON vx.country_id = c.country_id
+GROUP BY c.country_name;
+```
+
+🧩 Stored Procedures
+```sql
+-- Procedure: Revenue by country
+DELIMITER $$
+CREATE PROCEDURE CountryRevenueReport(IN InputCountry VARCHAR(100))
+BEGIN
+  SELECT c.country_name, SUM(v.price_usd) AS revenue
+  FROM vaccinations vx
+  JOIN countries c ON vx.country_id = c.country_id
+  JOIN vaccines v USING(vaccination_id)
+  WHERE c.country_name = InputCountry
+  GROUP BY c.country_name;
+END $$
+DELIMITER ;
+
+-- Call example:
+CALL CountryRevenueReport('Germany');
+```
+
+📐 Custom Functions
+```sql
+-- Function: Calculate event rate per 100k doses
+DELIMITER $$
+CREATE FUNCTION AdverseEventRatePer100k(VaxID INT)
+RETURNS DECIMAL(10,2)
+READS SQL DATA
+BEGIN
+  DECLARE event_count INT;
+  DECLARE dose_count INT;
+  SELECT COUNT(*) INTO event_count
+  FROM adverse_events ae
+  JOIN vaccinations vx USING(vaccination_id)
+  WHERE vx.vaccination_id = VaxID;
+
+  SELECT COUNT(*) INTO dose_count
+  FROM vaccinations
+  WHERE vaccination_id = VaxID;
+
+  RETURN ROUND(event_count / dose_count * 100000, 2);
+END $$
+DELIMITER ;
+
+-- Usage:
+SELECT AdverseEventRatePer100k(42);
+
+-- Function: Country-wide vaccination rate
+DELIMITER $$
+CREATE FUNCTION CountryVaccinationRate(CID INT)
+RETURNS DECIMAL(5,2)
+READS SQL DATA
+BEGIN
+  DECLARE total_pop INT;
+  DECLARE vax_count INT;
+
+  SELECT population_total INTO total_pop FROM populations WHERE country_id = CID;
+  SELECT COUNT(*) INTO vax_count FROM vaccinations WHERE country_id = CID;
+
+  RETURN ROUND(vax_count / total_pop * 100, 2);
+END $$
+DELIMITER ;
+
+-- Usage:
+SELECT CountryVaccinationRate(7);
+```
+By combining these SQL tools, we optimize performance for dashboard queries and promote reusability across analysis scenarios.
+
+---
+
 ## Stakeholder-Focused Business Questions & Dashboards
 
 ### 👤 **Country Lead**
